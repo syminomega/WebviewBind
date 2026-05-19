@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <IsPackable>true</IsPackable>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+
+        <RootNamespace>WebviewBind.Blazor</RootNamespace>
+        <PackageId>WebviewBind.Blazor</PackageId>
+        <Version>1.1.0</Version>
+        <Description>Blazor bridge package for WebviewBind. Provides DI-friendly IWebviewHostBridge service and JS module to invoke host methods from Blazor running in WebView2.</Description>
+        <Authors>Symin</Authors>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <RepositoryUrl>https://github.com/syminomega/WebviewBind</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageTags>webview;webview2;blazor;blazorwebview;wpf;interop;ipc</PackageTags>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    </PropertyGroup>
+
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="9.0.14"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.14" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="..\..\docs\WebviewBind.Blazor.Package.md" Pack="true" PackagePath="README.md" />
+        <None Include="..\..\LICENSE" Pack="true" PackagePath="" Link="LICENSE" />
+    </ItemGroup>
+
+</Project>

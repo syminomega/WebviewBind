@@ -1,0 +1,146 @@
+﻿@inject IWebviewHostBridge HostBridge
+
+<PageTitle>WebviewBind Demo</PageTitle>
+
+<main class="page-shell">
+    <section class="card-panel hero-panel">
+        <p class="eyebrow">Blazor WebAssembly + WPF WebView2</p>
+        <h1>WebviewBind Integration Test</h1>
+        <section class="status @(BridgeAvailable == false ? "status-error" : "status-ok")">@StatusMessage</section>
+    </section>
+
+    <section class="card-panel action-panel">
+        <div class="field-grid">
+            <label for="userName">User Name</label>
+            <div class="row-inline">
+                <input id="userName" @bind="UserName" />
+                <button type="button" @onclick="CallGreetingAsync">Call GetGreeting</button>
+            </div>
+        </div>
+
+        <div class="field-grid">
+            <label for="selectedFile">Open File Dialog Test</label>
+            <div class="row-inline">
+                <input id="selectedFile" value="@SelectedFilePath" readonly />
+                <button type="button" class="button-secondary" @onclick="CallOpenFileDialogAsync">Call OpenLoadFileDialog</button>
+            </div>
+        </div>
+
+        <div class="field-grid">
+            <label for="asyncInput">Async Method Test</label>
+            <div class="row-inline">
+                <input id="asyncInput" @bind="AsyncInput" />
+                <button type="button" class="button-secondary" @onclick="CallAsyncMessageAsync">Call GetMessageAsync</button>
+            </div>
+            <input id="asyncResult" value="@AsyncResult" readonly />
+        </div>
+
+        <div class="toolbar">
+            <button type="button" class="button-ghost" @onclick="CheckBridgeAsync">Re-check Bridge</button>
+        </div>
+    </section>
+
+    <section class="card-panel">
+        <h2>Invocation Log</h2>
+        <pre class="log-panel">@LogText</pre>
+    </section>
+</main>
+
+@code {
+    private string UserName { get; set; } = "Alopex";
+
+    private string AsyncInput { get; set; } = "WebView";
+
+    private string AsyncResult { get; set; } = string.Empty;
+
+    private string SelectedFilePath { get; set; } = string.Empty;
+
+    private string StatusMessage { get; set; } = "正在检测 WebView host bridge...";
+
+    private bool? BridgeAvailable { get; set; }
+
+    private List<string> Logs { get; } = [];
+
+    private string LogText => Logs.Count == 0 ? "No calls yet." : string.Join(Environment.NewLine, Logs);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        await CheckBridgeAsync();
+        StateHasChanged();
+    }
+
+    private async Task CheckBridgeAsync()
+    {
+        BridgeAvailable = await HostBridge.IsAvailableAsync();
+        StatusMessage = BridgeAvailable == true
+            ? "Bridge detected. You can invoke WPF host methods now."
+            : "Bridge not detected. Run this page from the WpfWithBlazor example.";
+        WriteLog(StatusMessage);
+    }
+
+    private async Task CallGreetingAsync()
+    {
+        if (!await EnsureBridgeAsync())
+        {
+            return;
+        }
+
+        WriteLog($"Invoking GetGreeting(\"{UserName}\")");
+        var result = await HostBridge.InvokeAsync<string>("GetGreeting", UserName);
+        StatusMessage = $"GetGreeting returned: {result}";
+        WriteLog(StatusMessage);
+    }
+
+    private async Task CallOpenFileDialogAsync()
+    {
+        if (!await EnsureBridgeAsync())
+        {
+            return;
+        }
+
+        WriteLog("Invoking OpenLoadFileDialog()");
+        SelectedFilePath = await HostBridge.InvokeAsync<string>("OpenLoadFileDialog") ?? string.Empty;
+        StatusMessage = string.IsNullOrWhiteSpace(SelectedFilePath)
+            ? "No file was selected."
+            : $"Selected file: {SelectedFilePath}";
+        WriteLog(StatusMessage);
+    }
+
+    private async Task CallAsyncMessageAsync()
+    {
+        if (!await EnsureBridgeAsync())
+        {
+            return;
+        }
+
+        WriteLog($"Invoking GetMessageAsync(\"{AsyncInput}\")");
+        AsyncResult = await HostBridge.InvokeAsync<string>("GetMessageAsync", AsyncInput) ?? string.Empty;
+        StatusMessage = $"GetMessageAsync returned: {AsyncResult}";
+        WriteLog(StatusMessage);
+    }
+
+    private async Task<bool> EnsureBridgeAsync()
+    {
+        if (BridgeAvailable == true)
+        {
+            return true;
+        }
+
+        await CheckBridgeAsync();
+        return BridgeAvailable == true;
+    }
+
+    private void WriteLog(string message)
+    {
+        Logs.Insert(0, $"[{DateTime.Now:HH:mm:ss}] {message}");
+        if (Logs.Count > 10)
+        {
+            Logs.RemoveAt(Logs.Count - 1);
+        }
+    }
+}

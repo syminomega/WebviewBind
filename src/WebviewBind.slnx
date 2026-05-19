@@ -1,6 +1,9 @@
 <Solution>
   <Folder Name="/Examples/">
+    <Project Path="Examples/BlazorTest/BlazorTest.csproj" />
+    <Project Path="Examples/WpfWithBlazor/WpfWithBlazor.csproj" />
     <Project Path="Examples/WpfWithHtml/WpfWithHtml.csproj" />
   </Folder>
+  <Project Path="WebviewBind.Blazor/WebviewBind.Blazor.csproj" />
   <Project Path="WebviewBind/WebviewBind.csproj" />
 </Solution>
