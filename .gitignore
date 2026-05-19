@@ -1,0 +1,14 @@
+.DS_Store
+Thumbs.db
+
+src/.idea
+src/.vscode
+src/.vs
+
+src/**/bin
+src/**/obj
+
+*.user
+*.suo
+*.lscache
+*.log

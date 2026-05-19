@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/Examples/">
+    <Project Path="Examples/WpfWithHtml/WpfWithHtml.csproj" />
+  </Folder>
+  <Project Path="WebviewBind/WebviewBind.csproj" />
+</Solution>

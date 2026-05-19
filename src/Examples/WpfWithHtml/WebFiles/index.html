@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebView Integration Test</title>
+    <script src="js/webview-bridge.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <main class="card">
+        <h1>WebView Integration Test</h1>
+        <p>Use the buttons below to call C# methods from JavaScript and verify the JS-to-host communication flow.</p>
+
+        <section class="grid">
+            <label for="userName">User Name</label>
+            <div class="row">
+                <input id="userName" type="text" value="Alopex" placeholder="Enter a name to send to C#" />
+                <button id="btnCall" type="button">Call GetGreeting</button>
+            </div>
+        </section>
+
+        <section class="grid">
+            <label for="selectedFilePath">Open File Dialog Test</label>
+            <div class="row">
+                <input id="selectedFilePath" type="text" value="" placeholder="Selected file path will appear here" readonly />
+                <button id="btnOpenFile" type="button">Call OpenLoadFileDialog</button>
+            </div>
+        </section>
+
+        <section class="grid">
+            <label for="asyncResult">Async Method Test</label>
+            <div class="row">
+                <input id="asyncInput" type="text" value="WebView" placeholder="Enter data for async method" />
+                <button id="btnAsync" type="button">Call GetMessageAsync</button>
+            </div>
+            <input id="asyncResult" type="text" value="" placeholder="Async result will appear here" readonly />
+        </section>
+
+        <section id="status" class="status">Waiting for invocation...</section>
+        <section id="log" class="log"></section>
+    </main>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const logEl = document.getElementById('log');
+        const userNameEl = document.getElementById('userName');
+        const selectedFilePathEl = document.getElementById('selectedFilePath');
+        const asyncInputEl = document.getElementById('asyncInput');
+        const asyncResultEl = document.getElementById('asyncResult');
+        const callBtnEl = document.getElementById('btnCall');
+        const openFileBtnEl = document.getElementById('btnOpenFile');
+        const asyncBtnEl = document.getElementById('btnAsync');
+
+        function writeLog(message) {
+            const now = new Date().toLocaleTimeString();
+            logEl.textContent += `[${now}] ${message}\n`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setStatus(message, isError) {
+            statusEl.textContent = message;
+            statusEl.classList.toggle('error', Boolean(isError));
+            statusEl.classList.toggle('ok', !isError);
+        }
+
+        function hasBridge() {
+            return typeof window.InvokeHostMethod === 'function';
+        }
+
+        async function callHost() {
+            const userName = userNameEl.value.trim() || 'Guest';
+
+            if (!hasBridge()) {
+                const msg = 'InvokeHostMethod was not detected. Make sure the page is running inside WebView2 and webview-bridge.js is loaded.';
+                setStatus(msg, true);
+                writeLog(msg);
+                return;
+            }
+
+            writeLog(`Invocation started: GetGreeting("${userName}")`);
+            setStatus('Invoking...', false);
+
+            try {
+                const result = await window.InvokeHostMethod('GetGreeting', userName);
+                setStatus(`Invocation succeeded: ${result}`, false);
+                writeLog(`Invocation succeeded, returned: ${JSON.stringify(result)}`);
+            } catch (err) {
+                const msg = err && err.message ? err.message : String(err);
+                setStatus(`Invocation failed: ${msg}`, true);
+                writeLog(`Invocation failed: ${msg}`);
+            }
+        }
+
+        async function callOpenFileDialog() {
+            if (!hasBridge()) {
+                const msg = 'InvokeHostMethod was not detected. Make sure the page is running inside WebView2 and webview-bridge.js is loaded.';
+                setStatus(msg, true);
+                writeLog(msg);
+                return;
+            }
+
+            writeLog('Invocation started: OpenLoadFileDialog()');
+            setStatus('Invoking...', false);
+
+            try {
+                const result = await window.InvokeHostMethod('OpenLoadFileDialog');
+                const path = typeof result === 'string' ? result : '';
+
+                if (path) {
+                    selectedFilePathEl.value = path;
+                    setStatus('Invocation succeeded: file selected.', false);
+                    writeLog(`Invocation succeeded, selected file: ${path}`);
+                } else {
+                    selectedFilePathEl.value = '';
+                    setStatus('Invocation succeeded: no file selected.', false);
+                    writeLog('Invocation succeeded, no file selected.');
+                }
+            } catch (err) {
+                const msg = err && err.message ? err.message : String(err);
+                setStatus(`Invocation failed: ${msg}`, true);
+                writeLog(`Invocation failed: ${msg}`);
+            }
+        }
+
+        async function callAsync() {
+            const inputData = asyncInputEl.value.trim() || 'WebView';
+
+            if (!hasBridge()) {
+                const msg = 'InvokeHostMethod was not detected. Make sure the page is running inside WebView2 and webview-bridge.js is loaded.';
+                setStatus(msg, true);
+                writeLog(msg);
+                return;
+            }
+
+            writeLog(`Invocation started: GetMessageAsync("${inputData}")`);
+            setStatus('Invoking async method...', false);
+
+            try {
+                const result = await window.InvokeHostMethod('GetMessageAsync', inputData);
+                asyncResultEl.value = result;
+                setStatus('Invocation succeeded: async method returned.', false);
+                writeLog(`Invocation succeeded, returned: ${JSON.stringify(result)}`);
+            } catch (err) {
+                const msg = err && err.message ? err.message : String(err);
+                setStatus(`Invocation failed: ${msg}`, true);
+                writeLog(`Invocation failed: ${msg}`);
+            }
+        }
+
+        callBtnEl.addEventListener('click', callHost);
+        openFileBtnEl.addEventListener('click', callOpenFileDialog);
+        asyncBtnEl.addEventListener('click', callAsync);
+        userNameEl.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                callHost();
+            }
+        });
+
+        writeLog('Page loaded. Ready for testing.');
+        if (hasBridge()) {
+            setStatus('Bridge is ready. You can start invoking now.', false);
+            writeLog('InvokeHostMethod detected.');
+        } else {
+            setStatus('Bridge is not ready. Invocation will fail.', true);
+            writeLog('InvokeHostMethod not detected.');
+        }
+    </script>
+</body>
+</html>
